@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
   * @file    Project/main.c 
-  * @author  MCD Application Team
-  * @version V2.2.0
-  * @date    30-September-2014
+  * @author  Vadzim Yatskevich
+  * @version V0.0.1
+  * @date    04-june-2017
   * @brief   Main program body
    ******************************************************************************
   * @attention
