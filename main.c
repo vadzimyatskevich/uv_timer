@@ -57,12 +57,12 @@ void main(void)
   FLASH_Unlock  ( FLASH_MEMTYPE_DATA )  ;
 
 
-  FLASH_ProgramWord(0x00004000, (uint32_t)0x12345678);
-  f_data = FLASH_ReadByte(0x00004000);
-  f_data = (f_data << 8) + FLASH_ReadByte(0x00004001);
-  f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
-  f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
-  FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
+//  FLASH_ProgramWord(0x00004000, (uint32_t)0x12345678);
+//  f_data = FLASH_ReadByte(0x00004000);
+//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004001);
+//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
+//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
+//  FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
 
 
   
@@ -71,7 +71,16 @@ void main(void)
   /* Infinite loop */
   while (1)
   {
+  //  all digits off
 
+//  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
+//  GPIO_WriteHigh(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg ON
+//  GPIO_WriteHigh(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg ON
   }
   
 }
@@ -86,9 +95,9 @@ void seven_segment()
      ledDisplay.index = 0;
    }
   //  all digits off
-  GPIO_WriteLow(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
-  GPIO_WriteLow(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
-  GPIO_WriteLow(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN);
+  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
+  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
+  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG3_PIN);
   // segments on
   GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
   GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
@@ -104,7 +113,7 @@ void seven_segment()
     value = uvTimer.timeCurrent;
   }
   
-  if (value >= 100){
+  if (value >= 10){
     dig3 = value / 1000;
     value %= 1000;
     dig2 = value/100;
@@ -191,13 +200,13 @@ void seven_segment()
   
   switch (ledDisplay.index){
     case 0:
-      GPIO_WriteHigh(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN); // dig on
+      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG1_PIN); // dig on
     break;
     case 1:
-      GPIO_WriteHigh(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN); // dig on
+      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN); // dig on
     break;
     case 2:
-      GPIO_WriteHigh(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN); // dig on
+      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG3_PIN); // dig on
     break;
     default:
     break;
@@ -236,11 +245,16 @@ static void GPIO_Config(void)
   GPIO_Init(GPIOD, (GPIO_Pin_TypeDef)(GPIO_PIN_5) , GPIO_MODE_IN_PU_NO_IT);
   EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOD, EXTI_SENSITIVITY_FALL_ONLY);
   // LED cathodes
-  GPIO_Init(GPIOD, (GPIO_Pin_TypeDef)(GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(DIG_PORT, (GPIO_Pin_TypeDef)(DIG1_PIN | DIG2_PIN | DIG3_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
   // LED segments
-  GPIO_Init(GPIOB, (GPIO_Pin_TypeDef)(GPIO_PIN_4 | GPIO_PIN_5) , GPIO_MODE_OUT_PP_LOW_FAST);
-  GPIO_Init(GPIOC, (GPIO_Pin_TypeDef)(GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7) , GPIO_MODE_OUT_PP_LOW_FAST);
-
+  GPIO_Init(SEG_A_PORT, (GPIO_Pin_TypeDef)(SEG_A_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_B_PORT, (GPIO_Pin_TypeDef)(SEG_B_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_C_PORT, (GPIO_Pin_TypeDef)(SEG_C_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_D_PORT, (GPIO_Pin_TypeDef)(SEG_D_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_E_PORT, (GPIO_Pin_TypeDef)(SEG_E_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_F_PORT, (GPIO_Pin_TypeDef)(SEG_F_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(SEG_G_PORT, (GPIO_Pin_TypeDef)(SEG_G_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  // led module output
   GPIO_Init(GPIOA, (GPIO_Pin_TypeDef)(GPIO_PIN_3) , GPIO_MODE_OUT_PP_LOW_FAST);
 }
 
