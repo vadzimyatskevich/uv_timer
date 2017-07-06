@@ -185,7 +185,7 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
         } 
       }
       /* trigger the set saving */
-      uvTimer.flashTmr = 100;
+      uvTimer.flashTmr = STORE_SET;
       uvTimer.flashRdy = FALSE;
     }
 

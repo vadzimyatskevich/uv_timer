@@ -62,7 +62,7 @@ void main(void)
   f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
   f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
   FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
-  if (f_data > 5400) {
+  if (f_data > 54000) {
     f_data = 1200;
   }
 

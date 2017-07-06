@@ -5,6 +5,8 @@
 
 #define LONG_PRESS      5
 #define DEBOUNCE        1
+#define STORE_SET       10
+
 #define DIG_PORT        GPIOD
 #define DIG1_PIN        GPIO_PIN_3
 #define DIG2_PIN        GPIO_PIN_2
