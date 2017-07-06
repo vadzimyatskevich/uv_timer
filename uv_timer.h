@@ -30,7 +30,9 @@ enum state { timer_run, timer_pause, timer_set };
 
 typedef struct {
   u16 debounce;
-  u16 timeSet;
+  u8  flashTmr;
+  bool  flashRdy;
+  u32 timeSet;
   u16 timeCurrent;
   u8  timerState;
   u8  timerLongPress;

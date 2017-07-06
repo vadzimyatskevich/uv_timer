@@ -25,6 +25,7 @@ static void TIM1_Config(void);
 static void TIM2_Config(void);
 
 void seven_segment(void);
+void store_set(void);
 static void delay(__IO uint32_t nCount);
 /* Private functions ---------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -41,8 +42,9 @@ void main(void)
   uint32_t f_data;
   
   uvTimer.debounce = DEBOUNCE;
-  uvTimer.timeSet = 0;
+  uvTimer.timeSet = 1200;
   uvTimer.timerState = timer_set;
+  uvTimer.flashRdy = TRUE;
   ledDisplay.index = 0;
   ledDisplay.dig1 = 1;
   ledDisplay.dig2 = 2;
@@ -55,22 +57,26 @@ void main(void)
   TIM2_Config();
   
   FLASH_Unlock  ( FLASH_MEMTYPE_DATA )  ;
+  f_data = FLASH_ReadByte(0x00004000);
+  f_data = (f_data << 8) + FLASH_ReadByte(0x00004001);
+  f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
+  f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
+  FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
+  if (f_data > 5400) {
+    f_data = 1200;
+  }
 
-
-//  FLASH_ProgramWord(0x00004000, (uint32_t)0x12345678);
-//  f_data = FLASH_ReadByte(0x00004000);
-//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004001);
-//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
-//  f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
-//  FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
-
-
+  uvTimer.timeSet = f_data;
   
   enableInterrupts(); 
 
   /* Infinite loop */
   while (1)
   {
+    if ( (uvTimer.flashRdy == FALSE) & (uvTimer.flashTmr == 0) ){
+        uvTimer.flashRdy = TRUE;
+        store_set();
+    }
   //  all digits off
 
 //  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
@@ -86,8 +92,16 @@ void main(void)
 }
 
 
-void seven_segment()
-{
+
+void store_set(){
+  FLASH_Unlock  ( FLASH_MEMTYPE_DATA )  ;
+  FLASH_ProgramWord(0x00004000, (uint32_t)uvTimer.timeSet);
+  FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
+}
+              
+
+
+void seven_segment(){
   u8 digit, dig1,dig2,dig3;
   u16 value;
    // index
@@ -113,7 +127,12 @@ void seven_segment()
     value = uvTimer.timeCurrent;
   }
   
-  if (value >= 10){
+  if ( value >= 6000 ){
+    dig2 = ' ';
+    dig2 = value/6000;
+    value %= 6000;
+    dig1 = value/600;
+  } else if ( value >= 10 ){
     dig3 = value / 1000;
     value %= 1000;
     dig2 = value/100;
@@ -124,7 +143,7 @@ void seven_segment()
     dig2 = ',';
     dig3 = value/10;
   }
-  switch (ledDisplay.index){
+  switch ( ledDisplay.index){
     case 0:
       digit = dig1;
       break;

@@ -159,27 +159,34 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
   if (uvTimer.debounce == 0) {
     if (((GPIO_ReadInputData(GPIOD) & GPIO_PIN_4) == 0x00) & (uvTimer.timerState == timer_set)){
       if ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_5) == 0x00){
-        if (uvTimer.timeSet == 0) {
+        if (uvTimer.timeSet <= 1) {
         } else if(uvTimer.timeSet <= 10) {
           uvTimer.timeSet -= 1;
-        } else if (uvTimer.timeSet <= 600){
+        } else if (uvTimer.timeSet <= 300){
           uvTimer.timeSet -= 10;
-        } else if (uvTimer.timeSet <= 6000){
+        } else if (uvTimer.timeSet <= 600){
+          uvTimer.timeSet -= 50;
+        } else if (uvTimer.timeSet <= 1200){
           uvTimer.timeSet -= 100;
         } else {
-          uvTimer.timeSet -= 500;
+          uvTimer.timeSet -= 600;
         } 
       } else {
         if(uvTimer.timeSet < 10){
           uvTimer.timeSet += 1;
-        } else if (uvTimer.timeSet < 600){
+        } else if (uvTimer.timeSet < 300){
           uvTimer.timeSet += 10;
-        } else if (uvTimer.timeSet < 6000){
+        } else if (uvTimer.timeSet < 600){
+          uvTimer.timeSet += 50;
+        } else if (uvTimer.timeSet < 1200){
           uvTimer.timeSet += 100;
-        } else if (uvTimer.timeSet < 9000){
-          uvTimer.timeSet += 500;
+        } else if (uvTimer.timeSet < 54000){
+          uvTimer.timeSet += 600;
         } 
       }
+      /* trigger the set saving */
+      uvTimer.flashTmr = 100;
+      uvTimer.flashRdy = FALSE;
     }
 
     if ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_6) == 0x00)
@@ -277,7 +284,10 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
   if (uvTimer.debounce > 0) {
     uvTimer.debounce--;
   }
-  
+  if (uvTimer.flashTmr > 0) {
+    uvTimer.flashTmr--;
+  }
+
   if((uvTimer.timeCurrent > 0) & (uvTimer.timerState == timer_run) & ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_6) != 0x00)){
     GPIO_WriteHigh(GPIOA, (GPIO_Pin_TypeDef)GPIO_PIN_3);
     uvTimer.timeCurrent--;
@@ -300,7 +310,7 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
     uvTimer.timerState = timer_set;
     uvTimer.timeCurrent = uvTimer.timeSet;
     uvTimer.timerLongPress = 0;
-  } 
+  }
   
   TIM1_ClearITPendingBit(TIM1_IT_UPDATE); 
 }
@@ -350,16 +360,6 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, 12)
   */
  INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
  {
-   // temp
-//   GPIO_WriteReverse(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
-//
-//   
-//   if (uvTimer.timerState == timer_set) {
-//     
-//   } else {
-//     
-//   }
-   
    seven_segment();
    TIM2_ClearITPendingBit  ( TIM2_IT_UPDATE )  ;
  }
