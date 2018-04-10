@@ -144,21 +144,10 @@ INTERRUPT_HANDLER(EXTI_PORTC_IRQHandler, 5)
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
-}
-
-/**
-  * @brief External Interrupt PORTD Interrupt routine.
-  * @param  None
-  * @retval None
-  */
-INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
-{
-  /* In order to detect unexpected events during development,
-     it is recommended to set a breakpoint on the following instruction.
-  */
+#if defined (__W1209_CA) || defined (__W1209_CC)
   if (uvTimer.debounce == 0) {
-    if (((GPIO_ReadInputData(GPIOD) & GPIO_PIN_4) == 0x00) & (uvTimer.timerState == timer_set)){
-      if ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_5) == 0x00){
+    if (((GPIO_ReadInputData(ENCA_PORT) & ENCA_PIN) == 0x00) & (uvTimer.timerState == timer_set)){
+        uvTimer.prevA = 0;
         if (uvTimer.timeSet <= 1) {
         } else if(uvTimer.timeSet <= 10) {
           uvTimer.timeSet -= 1;
@@ -168,10 +157,17 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
           uvTimer.timeSet -= 50;
         } else if (uvTimer.timeSet <= 1200){
           uvTimer.timeSet -= 100;
-        } else {
+        } else if (uvTimer.timeSet <= 54000){
           uvTimer.timeSet -= 600;
-        } 
-      } else {
+        } else {
+          uvTimer.timeSet -= 6000;
+        }
+        /* trigger the set saving */
+        uvTimer.flashTmr = STORE_SET;
+        uvTimer.flashRdy = FALSE;
+      } 
+     if (((GPIO_ReadInputData(ENCB_PORT) & ENCB_PIN) == 0x00) & (uvTimer.timerState == timer_set)){
+        uvTimer.prevB = 0;
         if(uvTimer.timeSet < 10){
           uvTimer.timeSet += 1;
         } else if (uvTimer.timeSet < 300){
@@ -182,14 +178,15 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
           uvTimer.timeSet += 100;
         } else if (uvTimer.timeSet < 54000){
           uvTimer.timeSet += 600;
+        }  else if (uvTimer.timeSet < 594000){
+          uvTimer.timeSet += 6000;
         } 
-      }
       /* trigger the set saving */
       uvTimer.flashTmr = STORE_SET;
       uvTimer.flashRdy = FALSE;
     }
 
-    if ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_6) == 0x00)
+    if ((GPIO_ReadInputData(ENCC_PORT) & ENCC_PIN) == 0x00)
     {
       if (uvTimer.timerState == timer_set){
         uvTimer.timeCurrent = uvTimer.timeSet;
@@ -205,6 +202,75 @@ INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
   if (uvTimer.debounce == 0) {
     uvTimer.debounce = DEBOUNCE;
   }
+#endif
+}
+
+/**
+  * @brief External Interrupt PORTD Interrupt routine.
+  * @param  None
+  * @retval None
+  */
+INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 6)
+{
+  /* In order to detect unexpected events during development,
+     it is recommended to set a breakpoint on the following instruction.
+  */
+#ifdef __UCDEV
+  u8 a,b,c;
+  a = (GPIO_ReadInputPin(ENCA_PORT, ENCA_PIN) == RESET);
+  b = (GPIO_ReadInputPin(ENCB_PORT, ENCB_PIN) == RESET);
+  c = (GPIO_ReadInputPin(ENCC_PORT, ENCC_PIN) == RESET);
+  if (uvTimer.debounce == 0) {
+    if ((a != TRUE) & (b == TRUE) & (uvTimer.timerState == timer_set)){
+        if (uvTimer.timeSet <= 1) {
+        } else if(uvTimer.timeSet <= 10) {
+          uvTimer.timeSet -= 1;
+        } else if (uvTimer.timeSet <= 300){
+          uvTimer.timeSet -= 10;
+        } else if (uvTimer.timeSet <= 600){
+          uvTimer.timeSet -= 50;
+        } else if (uvTimer.timeSet <= 1200){
+          uvTimer.timeSet -= 100;
+        } else {
+          uvTimer.timeSet -= 600;
+        } 
+      /* trigger the set saving */
+      uvTimer.flashTmr = STORE_SET;
+      uvTimer.flashRdy = FALSE;
+      } 
+    if ((a == TRUE) & (b != TRUE) & (uvTimer.timerState == timer_set)){
+        if(uvTimer.timeSet < 10){
+          uvTimer.timeSet += 1;
+        } else if (uvTimer.timeSet < 300){
+          uvTimer.timeSet += 10;
+        } else if (uvTimer.timeSet < 600){
+          uvTimer.timeSet += 50;
+        } else if (uvTimer.timeSet < 1200){
+          uvTimer.timeSet += 100;
+        } else if (uvTimer.timeSet < 54000){
+          uvTimer.timeSet += 600;
+        } 
+      /* trigger the set saving */
+      uvTimer.flashTmr = STORE_SET;
+      uvTimer.flashRdy = FALSE;
+    }
+
+    if ((GPIO_ReadInputPin(ENCC_PORT, ENCC_PIN) == RESET))
+    {
+      if (uvTimer.timerState == timer_set){
+        uvTimer.timeCurrent = uvTimer.timeSet;
+        uvTimer.timerState = timer_run;
+      } else if (uvTimer.timerState == timer_run){
+        uvTimer.timerState = timer_pause;
+      } else if (uvTimer.timerState == timer_pause){
+        uvTimer.timerState = timer_run;
+      } 
+
+    }
+    uvTimer.debounce = DEBOUNCE;
+  }
+  
+#endif
 }
 /**
   * @brief External Interrupt PORTE Interrupt routine.
@@ -288,18 +354,23 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
     uvTimer.flashTmr--;
   }
 
-  if((uvTimer.timeCurrent > 0) & (uvTimer.timerState == timer_run) & ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_6) != 0x00)){
+  if (uvTimer.delay > 0) {
+    uvTimer.delay--;
+  }
+  
+  if((uvTimer.timeCurrent > 0) & (uvTimer.timerState == timer_run) & ((GPIO_ReadInputData(ENCC_PORT) & ENCC_PIN) != 0x00)){
     GPIO_WriteHigh(GPIOA, (GPIO_Pin_TypeDef)GPIO_PIN_3);
     uvTimer.timeCurrent--;
   } else if((uvTimer.timeCurrent == 0) & (uvTimer.timerState == timer_run)){
     GPIO_WriteLow(GPIOA, (GPIO_Pin_TypeDef)GPIO_PIN_3);
     uvTimer.timerState = timer_set;
+    uvTimer.expired = TRUE;
   } else if(uvTimer.timerState == timer_pause){
     GPIO_WriteLow(GPIOA, (GPIO_Pin_TypeDef)GPIO_PIN_3);
   }
   
   // long press detection
-  if ((GPIO_ReadInputData(GPIOD) & GPIO_PIN_6) == 0x00){
+  if ((GPIO_ReadInputData(ENCC_PORT) & ENCC_PIN) == 0x00){
     uvTimer.timerLongPress++;
   } else {
     uvTimer.timerLongPress = 0;
@@ -311,7 +382,59 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
     uvTimer.timeCurrent = uvTimer.timeSet;
     uvTimer.timerLongPress = 0;
   }
+#if defined (__W1209_CA) || defined(__W1209_CC)
+  /* ENCA & ENCB is a buttons "+" & "-" */
+      if (((GPIO_ReadInputData(ENCA_PORT) & ENCA_PIN) == 0x00) 
+          & (uvTimer.timerState == timer_set)
+          & (uvTimer.prevA == 0)
+          & (uvTimer.debounce == 0)){
+        uvTimer.prevA = 0;
+        if (uvTimer.timeSet <= 1) {
+        } else if(uvTimer.timeSet <= 10) {
+          uvTimer.timeSet -= 1;
+        } else if (uvTimer.timeSet <= 300){
+          uvTimer.timeSet -= 10;
+        } else if (uvTimer.timeSet <= 600){
+          uvTimer.timeSet -= 50;
+        } else if (uvTimer.timeSet <= 1200){
+          uvTimer.timeSet -= 100;
+        } else if (uvTimer.timeSet <= 54000){
+          uvTimer.timeSet -= 600;
+        } else {
+          uvTimer.timeSet -= 6000;
+        }
+        /* trigger the set saving */
+        uvTimer.flashTmr = STORE_SET;
+        uvTimer.flashRdy = FALSE;
+      } else if ( (GPIO_ReadInputData(ENCA_PORT) & ENCA_PIN) != 0x00){
+        uvTimer.prevA = 1;
+      }
   
+     if (((GPIO_ReadInputData(ENCB_PORT) & ENCB_PIN) == 0x00) 
+          & (uvTimer.timerState == timer_set)
+          & (uvTimer.prevB == 0)
+          & (uvTimer.debounce == 0)){
+        uvTimer.prevB = 0;
+        if(uvTimer.timeSet < 10){
+          uvTimer.timeSet += 1;
+        } else if (uvTimer.timeSet < 300){
+          uvTimer.timeSet += 10;
+        } else if (uvTimer.timeSet < 600){
+          uvTimer.timeSet += 50;
+        } else if (uvTimer.timeSet < 1200){
+          uvTimer.timeSet += 100;
+        } else if (uvTimer.timeSet < 54000){
+          uvTimer.timeSet += 600;
+        } else if (uvTimer.timeSet < 594000){
+          uvTimer.timeSet += 6000;
+        } 
+      /* trigger the set saving */
+      uvTimer.flashTmr = STORE_SET;
+      uvTimer.flashRdy = FALSE;
+    }  else if ( (GPIO_ReadInputData(ENCB_PORT) & ENCB_PIN) != 0x00){
+        uvTimer.prevB = 1;
+      }
+#endif
   TIM1_ClearITPendingBit(TIM1_IT_UPDATE); 
 }
 

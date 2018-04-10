@@ -20,13 +20,10 @@
 /* Private function prototypes -----------------------------------------------*/
 static void CLK_Config(void);
 static void GPIO_Config(void);
-static void LCD_Config(void);
 static void TIM1_Config(void);
 static void TIM2_Config(void);
-
 void seven_segment(void);
 void store_set(void);
-static void delay(__IO uint32_t nCount);
 /* Private functions ---------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uvTimerTypedef uvTimer;
@@ -39,12 +36,13 @@ ledDisplayTypedef ledDisplay;
 
 void main(void)
 { 
-  uint32_t f_data;
+  uint32_t f_data = 0;
   
   uvTimer.debounce = DEBOUNCE;
   uvTimer.timeSet = 1200;
   uvTimer.timerState = timer_set;
   uvTimer.flashRdy = TRUE;
+  uvTimer.expired = FALSE;
   ledDisplay.index = 0;
   ledDisplay.dig1 = 1;
   ledDisplay.dig2 = 2;
@@ -62,12 +60,12 @@ void main(void)
   f_data = (f_data << 8) + FLASH_ReadByte(0x00004002);
   f_data = (f_data << 8) + FLASH_ReadByte(0x00004003);
   FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
-  if (f_data > 54000) {
+
+  if (f_data > 594000 /*|| f_data == 0*/) {
     f_data = 1200;
   }
 
   uvTimer.timeSet = f_data;
-  
   enableInterrupts(); 
 
   /* Infinite loop */
@@ -77,16 +75,12 @@ void main(void)
         uvTimer.flashRdy = TRUE;
         store_set();
     }
-  //  all digits off
-
-//  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
-//  GPIO_WriteHigh(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg ON
-//  GPIO_WriteHigh(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg ON
+#ifndef __UCDEV
+    if (uvTimer.expired == TRUE){
+        uvTimer.expired = FALSE;
+        beep(5);
+    }
+#endif
   }
   
 }
@@ -98,28 +92,32 @@ void store_set(){
   FLASH_ProgramWord(0x00004000, (uint32_t)uvTimer.timeSet);
   FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
 }
-              
 
+#if defined (__W1209_CA) || defined(__W1209_CC)
+  void beep(u8 i){
+    for (; i>0; i--){
+        GPIO_WriteHigh(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
+        delay_100ms(5);
+        GPIO_WriteLow(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
+        delay_100ms(2);
+    }
+  }
+#endif
+
+              
+void delay_100ms(u16 ms){
+  uvTimer.delay = ms;
+  while (uvTimer.delay != 0){
+  }
+}
 
 void seven_segment(){
   u8 digit, dig1,dig2,dig3;
-  u16 value;
+  u32 value;
    // index
    if ( ++ledDisplay.index > 2) {
      ledDisplay.index = 0;
    }
-  //  all digits off
-  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
-  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
-  GPIO_WriteLow(DIG_PORT, (GPIO_Pin_TypeDef)DIG3_PIN);
-  // segments on
-  GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
-  GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
-  GPIO_WriteLow(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg ON
-  GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg ON
-  GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg ON
-  GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg ON
-  GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg ON
 
   if(uvTimer.timerState == timer_set){
     value = uvTimer.timeSet;
@@ -128,7 +126,8 @@ void seven_segment(){
   }
   
   if ( value >= 6000 ){
-    dig2 = ' ';
+    dig3 = value/60000;
+    value %= 60000;
     dig2 = value/6000;
     value %= 6000;
     dig1 = value/600;
@@ -157,6 +156,20 @@ void seven_segment(){
     break;
   }
   
+  /* Check the used compiler */
+#if defined(DISP_CA)
+  //  all digits off
+  GPIO_WriteLow(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
+  GPIO_WriteLow(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
+  GPIO_WriteLow(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN);
+  // segments on
+  GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
+  GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
+  GPIO_WriteLow(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg ON
+  GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg ON
+  GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg ON
+  GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg ON
+  GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg ON
   switch (digit){
     case 0:
       GPIO_WriteHigh(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
@@ -219,17 +232,105 @@ void seven_segment(){
   
   switch (ledDisplay.index){
     case 0:
-      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG1_PIN); // dig on
+      GPIO_WriteHigh(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN); // dig on
     break;
     case 1:
-      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG2_PIN); // dig on
+      GPIO_WriteHigh(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN); // dig on
     break;
     case 2:
-      GPIO_WriteHigh(DIG_PORT, (GPIO_Pin_TypeDef)DIG3_PIN); // dig on
+      GPIO_WriteHigh(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN); // dig on
     break;
     default:
     break;
   }
+#elif defined(DISP_CC)
+  //  all digits off
+  GPIO_WriteHigh(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
+  GPIO_WriteHigh(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN);
+  GPIO_WriteHigh(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN);
+  // segments on
+  GPIO_WriteHigh(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg ON
+  GPIO_WriteHigh(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg ON
+  GPIO_WriteHigh(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg ON
+  GPIO_WriteHigh(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg ON
+  GPIO_WriteHigh(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg ON
+  GPIO_WriteHigh(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg ON
+  GPIO_WriteHigh(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg ON
+  switch (digit){
+    case 0:
+      GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
+    break;
+    case 1:
+      GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg off
+      GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+      GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
+    break;
+    case 2:
+      GPIO_WriteLow(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+    break;
+    case 3:
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+    break;
+    case 4:
+      GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg off
+      GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+    break;
+    case 5:
+      GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+    break;
+    case 6:
+      GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg off
+    break;
+    case 7:
+      GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+      GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
+    break;
+    case 8:
+    break;
+    case 9:
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+    break;
+    case ',':
+      GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg off
+      GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+      GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
+    break;
+    default:
+      GPIO_WriteLow(SEG_A_PORT, (GPIO_Pin_TypeDef)SEG_A_PIN); // seg off
+      GPIO_WriteLow(SEG_B_PORT, (GPIO_Pin_TypeDef)SEG_B_PIN); // seg off
+      GPIO_WriteLow(SEG_C_PORT, (GPIO_Pin_TypeDef)SEG_C_PIN); // seg off
+      GPIO_WriteLow(SEG_D_PORT, (GPIO_Pin_TypeDef)SEG_D_PIN); // seg off
+      GPIO_WriteLow(SEG_E_PORT, (GPIO_Pin_TypeDef)SEG_E_PIN); // seg off
+      GPIO_WriteLow(SEG_F_PORT, (GPIO_Pin_TypeDef)SEG_F_PIN); // seg off
+      GPIO_WriteLow(SEG_G_PORT, (GPIO_Pin_TypeDef)SEG_G_PIN); // seg off
+    break;
+    }
+  
+  switch (ledDisplay.index){
+    case 0:
+      GPIO_WriteLow(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN); // dig on
+    break;
+    case 1:
+      GPIO_WriteLow(DIG2_PORT, (GPIO_Pin_TypeDef)DIG2_PIN); // dig on
+    break;
+    case 2:
+      GPIO_WriteLow(DIG3_PORT, (GPIO_Pin_TypeDef)DIG3_PIN); // dig on
+    break;
+    default:
+    break;
+  }
+#endif
+
 }
 
   
@@ -242,14 +343,21 @@ void seven_segment(){
 static void CLK_Config(void)
 {
   CLK_DeInit();
-  
   /* Clock divider to HSI/1 */
+#if defined(__UCDEV)
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV8);
-  
   CLK_ClockSwitchConfig(CLK_SWITCHMODE_AUTO, CLK_SOURCE_HSE, DISABLE, CLK_CURRENTCLOCKSTATE_DISABLE);
-  
-  /* Output Fcpu on CLK_CCO pin */
-//  CLK_CCOConfig(CLK_OUTPUT_MASTER);
+#elif defined(__W1209_CA)
+  CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV2);
+  CLK_ClockSwitchConfig(CLK_SWITCHMODE_AUTO, CLK_SOURCE_HSI, DISABLE, CLK_CURRENTCLOCKSTATE_DISABLE);
+#elif defined(__W1209_CC)
+  CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV2);
+  CLK_ClockSwitchConfig(CLK_SWITCHMODE_AUTO, CLK_SOURCE_HSI, DISABLE, CLK_CURRENTCLOCKSTATE_DISABLE);
+#else
+ #error "Unsupported Board!"  
+#endif
+
+
 }
 
 /**
@@ -260,11 +368,14 @@ static void CLK_Config(void)
 static void GPIO_Config(void)
 {
   // encoder
-  GPIO_Init(GPIOD, (GPIO_Pin_TypeDef)(GPIO_PIN_4 | GPIO_PIN_6) , GPIO_MODE_IN_PU_IT);
-  GPIO_Init(GPIOD, (GPIO_Pin_TypeDef)(GPIO_PIN_5) , GPIO_MODE_IN_PU_NO_IT);
-  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOD, EXTI_SENSITIVITY_FALL_ONLY);
+  GPIO_Init(ENCA_PORT, (GPIO_Pin_TypeDef)ENCA_PIN, GPIO_MODE_IN_PU_IT);
+  GPIO_Init(ENCB_PORT, (GPIO_Pin_TypeDef)ENCB_PIN, GPIO_MODE_IN_PU_IT);
+  GPIO_Init(ENCC_PORT, (GPIO_Pin_TypeDef)ENCC_PIN, GPIO_MODE_IN_PU_IT);
+  EXTI_SetExtIntSensitivity(EXTI_ENC, EXTI_SENSITIVITY_FALL_ONLY);
   // LED cathodes
-  GPIO_Init(DIG_PORT, (GPIO_Pin_TypeDef)(DIG1_PIN | DIG2_PIN | DIG3_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(DIG1_PORT, (GPIO_Pin_TypeDef)(DIG1_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(DIG2_PORT, (GPIO_Pin_TypeDef)(DIG2_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(DIG3_PORT, (GPIO_Pin_TypeDef)(DIG3_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
   // LED segments
   GPIO_Init(SEG_A_PORT, (GPIO_Pin_TypeDef)(SEG_A_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
   GPIO_Init(SEG_B_PORT, (GPIO_Pin_TypeDef)(SEG_B_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
@@ -275,6 +386,10 @@ static void GPIO_Config(void)
   GPIO_Init(SEG_G_PORT, (GPIO_Pin_TypeDef)(SEG_G_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
   // led module output
   GPIO_Init(GPIOA, (GPIO_Pin_TypeDef)(GPIO_PIN_3) , GPIO_MODE_OUT_PP_LOW_FAST);
+  #ifndef __UCDEV
+  //beeper
+  GPIO_Init(BEEP_PORT, (GPIO_Pin_TypeDef)(BEEP_PIN) , GPIO_MODE_OUT_PP_LOW_FAST);
+  #endif
 }
 
 /**
@@ -306,14 +421,6 @@ static void TIM2_Config(void)
 }
 
 
-static void delay(__IO uint32_t nCount)
- {
-   /* Decrement nCount value */
-   while (nCount != 0)
-   {
-     nCount--;
-   }
- }
 
 #ifdef USE_FULL_ASSERT
 
