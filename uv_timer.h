@@ -3,9 +3,9 @@
 #ifndef __UVTIMER_H
 #define __UVTIMER_H
 /* Configuration defines -----------------------------------------------------*/
-//#define __UCDEV     //
+#define __UCDEV     //
 //#define __W1209_CA  //
-#define __W1209_CC  //
+//#define __W1209_CC  //
 
 #if defined(__UCDEV)
   #define DISP_CA
