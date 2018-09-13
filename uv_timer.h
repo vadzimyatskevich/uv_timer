@@ -3,9 +3,9 @@
 #ifndef __UVTIMER_H
 #define __UVTIMER_H
 /* Configuration defines -----------------------------------------------------*/
-#define __UCDEV     //
-//#define __W1209_CA  //
-//#define __W1209_CC  //
+#define __UCDEV     // орининальный таймер 
+//#define __W1209_CA  // W1209 с общим анодом
+//#define __W1209_CC  // W1209 с общим анодом
 
 #if defined(__UCDEV)
   #define DISP_CA
