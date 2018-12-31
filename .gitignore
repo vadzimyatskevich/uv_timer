@@ -1,8 +1,24 @@
-/EWSTM8/*
-!/EWSTM8/STM8S003
-/EWSTM8/STM8S003/*
-!/EWSTM8/STM8S003/Exe/
-!/EWSTM8/STM8S103
-/EWSTM8/STM8S103/*
-!/EWSTM8/STM8S103/Exe/
+# IAR Settings  
+**/settings/*.crun  
+**/settings/*.dbgdt  
+**/settings/*.cspy  
+**/settings/*.cspy.*  
+**/settings/*.xcl  
+**/settings/*.dni  
+**/settings/*.wsdt  
+**/settings/*.wspos  
+
+# IAR Debug Exe  
+**/Exe/*.sim  
+
+# IAR Debug Obj  
+**/Obj/*.pbd  
+**/Obj/*.pbd.*  
+**/Obj/*.pbi  
+**/Obj/*.pbi.*  
+
+*.o
+*.log
+*.out
+*.hex
 
