@@ -1,3 +1,3 @@
-Таймер для засветки фоторезиста на микроконтроллере STM8
+Универсальный таймер на микроконтроллере STM8. Разработан для использования совместно с [УФ лампой](https://github.com/vadzimyatskevich/uv_lamp)
 ![Scheme](/doc/img/sch1.jpg)
-![Scheme](/doc/img/IMG_6590.JPG)
+![Photo](/doc/img/IMG_6590.JPG)
