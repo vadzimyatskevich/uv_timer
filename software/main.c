@@ -29,11 +29,11 @@ void store_set(void);
 uvTimerTypedef uvTimer;
 ledDisplayTypedef ledDisplay;
 
-
-
-
-
-
+/**
+ * @brief  
+ * @note   
+ * @retval None
+ */
 void main(void)
 { 
   uint32_t f_data = 0;
@@ -85,32 +85,53 @@ void main(void)
   
 }
 
-
-
+/**
+ * @brief  Save timer settings
+ * @note   
+ * @retval None
+ */
 void store_set(){
   FLASH_Unlock  ( FLASH_MEMTYPE_DATA )  ;
   FLASH_ProgramWord(0x00004000, (uint32_t)uvTimer.timeSet);
   FLASH_Lock  ( FLASH_MEMTYPE_DATA )  ;
 }
 
+
+
 #if defined (__W1209_CA) || defined(__W1209_CC)
-  void beep(u8 i){
-    for (; i>0; i--){
-        GPIO_WriteHigh(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
-        delay_100ms(5);
-        GPIO_WriteLow(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
-        delay_100ms(2);
-    }
+/**
+ * @brief  Beep sound when using W1209 board
+ * @note   
+ * @param  i: 
+ * @retval None
+ */
+void beep(u8 i){
+  for (; i>0; i--){
+      GPIO_WriteHigh(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
+      delay_100ms(5);
+      GPIO_WriteLow(BEEP_PORT, (GPIO_Pin_TypeDef)BEEP_PIN); // dig on
+      delay_100ms(2);
   }
+}
 #endif
 
-              
+/**
+  * @brief  100ms delay function
+  * @note   
+  * @param  ms: 
+  * @retval None
+  */     
 void delay_100ms(u16 ms){
   uvTimer.delay = ms;
   while (uvTimer.delay != 0){
   }
 }
 
+/**
+ * @brief  Show delay value on 7seg display
+ * @note   
+ * @retval None
+ */
 void seven_segment(){
   u8 digit, dig1,dig2,dig3;
   u32 value;
@@ -156,7 +177,7 @@ void seven_segment(){
     break;
   }
   
-  /* Check the used compiler */
+// Common anode display
 #if defined(DISP_CA)
   //  all digits off
   GPIO_WriteLow(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
@@ -243,6 +264,7 @@ void seven_segment(){
     default:
     break;
   }
+// common cathode display
 #elif defined(DISP_CC)
   //  all digits off
   GPIO_WriteHigh(DIG1_PORT, (GPIO_Pin_TypeDef)DIG1_PIN);
@@ -330,7 +352,6 @@ void seven_segment(){
     break;
   }
 #endif
-
 }
 
   

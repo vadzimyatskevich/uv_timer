@@ -23,8 +23,7 @@
  #error "Unsupported Board!"  
 #endif
 
-
-#define STORE_SET       10
+#define STORE_SET       10  // delay before saving timer value in x100ms
 /* Board dependent defines ---------------------------------------------------*/
 #if defined(__UCDEV)
   #define EXTI_ENC        EXTI_PORT_GPIOD
@@ -132,6 +131,7 @@
 
 enum state { timer_run, timer_pause, timer_set };
 
+
 typedef struct {
   u16 debounce;
   u8  flashTmr;
@@ -147,7 +147,6 @@ typedef struct {
   u8 a;
   u8 b;
   u8 c;
-
 } uvTimerTypedef;
 
 typedef struct {
@@ -160,14 +159,12 @@ typedef struct {
 extern uvTimerTypedef uvTimer;
 extern ledDisplayTypedef ledDisplay;
 
-
 void seven_segment(void);
 void delay_100ms(u16);
 
 #ifndef __UCDEV
   void beep(u8);
 #endif
-
 
 /**
   * @}
