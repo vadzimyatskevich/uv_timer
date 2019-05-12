@@ -8,10 +8,8 @@
 **/settings/*.wsdt  
 **/settings/*.wspos  
 
-# IAR Debug Exe  
+# IAR 
 **/Exe/*.sim  
-
-# IAR Debug Obj  
 **/Obj/*.pbd  
 **/Obj/*.pbd.*  
 **/Obj/*.pbi  
@@ -25,3 +23,5 @@
 # VS code
 .vscode/*
 
+#etc
+**/.Idea_Temp
