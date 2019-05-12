@@ -22,3 +22,6 @@
 *.out
 *.hex
 
+# VS code
+.vscode
+
